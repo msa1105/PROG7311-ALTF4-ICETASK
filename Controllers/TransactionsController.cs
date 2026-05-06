@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using FinanceTrack.Interfaces;
+using FinanceTrack.Models;
 
 namespace FinanceTrack.Controllers
 {
@@ -25,21 +26,25 @@ namespace FinanceTrack.Controllers
             return View();
         }
 
-        public IActionResult Expenses()
-        {
-            return View();
-        }
-
-        public IActionResult Income()
-        {
-            return View();
-        }
-
         public IActionResult AssetsLiabilities()
         {
             ViewBag.TotalAssets = _transactionService.GetTotalAssets();
             ViewBag.TotalLiabilities = _transactionService.GetTotalLiabilities();
             return View();
+        }
+
+        [HttpGet]
+        public IActionResult Add()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult Add(Transaction transaction)
+        {
+            transaction.Date = DateTime.Today;
+            _transactionService.AddTransaction(transaction);
+            return RedirectToAction("Ledger");
         }
     }
 }

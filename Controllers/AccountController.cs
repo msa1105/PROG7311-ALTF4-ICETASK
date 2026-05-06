@@ -23,13 +23,10 @@ namespace FinanceTrack.Controllers
         }
 
         [HttpPost]
-        public IActionResult Login(string email, string password)
+        public async Task<IActionResult> Login(string email, string password)
         {
-            // Query physical SQLite database for user
             var user = _context.Users.FirstOrDefault(u => u.Email == email);
-            
-            // Password validation is bypassed since we didn't add password hash to user model for the assignment,
-            // we just verify email exists.
+
             if (user != null)
             {
                 var claims = new List<Claim>
@@ -41,7 +38,7 @@ namespace FinanceTrack.Controllers
 
                 var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 
-                HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
                 return RedirectToAction("Index", "Home");
             }
@@ -57,7 +54,7 @@ namespace FinanceTrack.Controllers
         }
 
         [HttpPost]
-        public IActionResult Register(string name, string email, string password, string role)
+        public async Task<IActionResult> Register(string name, string email, string password, string role)
         {
             if (_context.Users.Any(u => u.Email == email))
             {
@@ -75,14 +72,13 @@ namespace FinanceTrack.Controllers
             _context.Users.Add(newUser);
             _context.SaveChanges();
 
-            // Auto log-in after registration
-            return Login(email, password);
+            return await Login(email, password);
         }
 
         [HttpPost]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login");
         }
     }

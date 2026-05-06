@@ -9,30 +9,31 @@
         <h1>General Ledger</h1>
         <p>Complete transaction history</p>
     </div>
-    <a href="#" class="btn">+ Add Transaction</a>
+    <a href="/Transactions/Add" class="btn">+ Add Transaction</a>
 </div>
 
 <div class="ledger-controls">
-    <input type="text" class="search-input" placeholder="Search by ID, entity name, or category..." />
-    <select class="filter-select">
-        <option>All Types</option>
-        <option>Income</option>
-        <option>Expense</option>
-        <option>Liability</option>
-        <option>Asset</option>
+    <input type="text" id="searchInput" class="search-input" placeholder="Search by ID, entity name, or category..." />
+    <select id="typeFilter" class="filter-select">
+        <option value="">All Types</option>
+        <option value="Income">Income</option>
+        <option value="Expense">Expense</option>
+        <option value="Liability">Liability</option>
+        <option value="Asset">Asset</option>
+        <option value="Receivable">Receivable</option>
     </select>
-    <select class="filter-select">
-        <option>All Status</option>
-        <option>Pending</option>
-        <option>Paid</option>
+    <select id="statusFilter" class="filter-select">
+        <option value="">All Status</option>
+        <option value="Pending">Pending</option>
+        <option value="Paid">Paid</option>
     </select>
-    <input type="date" class="filter-select" />
+    <input type="date" id="dateFrom" class="filter-select" />
     <span style="color: var(--text-secondary); margin: 0 8px;">to</span>
-    <input type="date" class="filter-select" />
+    <input type="date" id="dateTo" class="filter-select" />
 </div>
 
 <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
-    Showing @Model.Count() transactions
+    Showing <span id="rowCount">@Model.Count()</span> transactions
 </div>
 
 <div class="table-container">
@@ -49,10 +50,15 @@
                 <th>Due Date</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="ledgerBody">
             @foreach (var tx in Model)
             {
-                <tr>
+                <tr data-id="@tx.Id"
+                    data-type="@tx.Type"
+                    data-status="@tx.Status"
+                    data-entity="@tx.EntityName.ToLower()"
+                    data-category="@tx.Category.ToLower()"
+                    data-date="@tx.Date.ToString("yyyy-MM-dd")">
                     <td style="color: var(--text-tertiary)">#@tx.Id</td>
                     <td>@tx.Date.ToShortDateString()</td>
                     <td><span class="badge type-@(tx.Type.ToLower())">@tx.Type</span></td>
@@ -70,3 +76,50 @@
         </tbody>
     </table>
 </div>
+
+@section Scripts {
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const typeFilter = document.getElementById('typeFilter');
+        const statusFilter = document.getElementById('statusFilter');
+        const dateFrom = document.getElementById('dateFrom');
+        const dateTo = document.getElementById('dateTo');
+        const rowCount = document.getElementById('rowCount');
+        const rows = document.querySelectorAll('#ledgerBody tr');
+
+        function applyFilters() {
+            const search = searchInput.value.toLowerCase();
+            const type = typeFilter.value;
+            const status = statusFilter.value;
+            const from = dateFrom.value ? new Date(dateFrom.value) : null;
+            const to = dateTo.value ? new Date(dateTo.value) : null;
+
+            let visible = 0;
+            rows.forEach(row => {
+                const matchesSearch = !search ||
+                    row.dataset.id.includes(search) ||
+                    row.dataset.entity.includes(search) ||
+                    row.dataset.category.includes(search);
+
+                const matchesType = !type || row.dataset.type === type;
+                const matchesStatus = !status || row.dataset.status === status;
+
+                const rowDate = new Date(row.dataset.date);
+                const matchesFrom = !from || rowDate >= from;
+                const matchesTo = !to || rowDate <= to;
+
+                const show = matchesSearch && matchesType && matchesStatus && matchesFrom && matchesTo;
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+
+            rowCount.textContent = visible;
+        }
+
+        searchInput.addEventListener('input', applyFilters);
+        typeFilter.addEventListener('change', applyFilters);
+        statusFilter.addEventListener('change', applyFilters);
+        dateFrom.addEventListener('change', applyFilters);
+        dateTo.addEventListener('change', applyFilters);
+    </script>
+}
